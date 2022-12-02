@@ -1,4 +1,4 @@
-import time
+import threading
 import traceback
 from subprocess import Popen
 from tkinter import *
@@ -67,7 +67,12 @@ try:
 
     print("\nПрограмма ожидает сочетания клавиш")
 
-    with keyboard.GlobalHotKeys({"<ctrl>+n": lambda: distanceFinder.checkDistance(modelTank, modelMarker), "<ctrl>+m": lambda: Popen(["python", "scale.py"]), "<ctrl>+q": lambda: quit()}) as h:
+    def on_distance():
+        x = threading.Thread(target=distanceFinder.checkDistance,
+                             args=(modelTank, modelMarker))
+        x.start()
+
+    with keyboard.GlobalHotKeys({"<ctrl>+n": on_distance, "<ctrl>+m": lambda: Popen(["python", "scale.py"]), "<ctrl>+q": lambda: quit()}) as h:
         h.join()
 
 except Exception as e:
