@@ -49,11 +49,12 @@ class RTSSSharedMemory:
                         OSDowner = self.name.encode("ascii")
                         self.shm[ptr + entry.szOSDOwner_range[0]:ptr +
                                  entry.szOSDOwner_range[0] + len(OSDowner)] = OSDowner  # Write new OSDOwner
+                        entry.szOSDOwner = self.name
 
                 if entry.szOSDOwner == self.name:
                     dwBusy = self.shm[36] & 0b10000000  # Get first bit
-
                     self.shm[36] = self.shm[36] | 0b10000000  # Set first bit
+
                     if not dwBusy:
                         self.shm[ptr + entry.szOSDEx_range[0]:ptr +
                                  entry.szOSDEx_range[1]] = b'\0' * 4096  # Empty szOSDex
@@ -89,7 +90,8 @@ class RTSSSharedMemoryOsd:
 
     def __init__(self, mem: bytes):
         szOSD_bytes = mem[self.szOSD_range[0]:self.szOSD_range[1]]
-        szOSDOwner_bytes = mem[self.szOSDOwner_range[0]                               :self.szOSDOwner_range[1]]
+        szOSDOwner_bytes = mem[self.szOSDOwner_range[0]
+            :self.szOSDOwner_range[1]]
         szOSDEx_bytes = mem[self.szOSDEx_range[0]:self.szOSDEx_range[1]]
         buffer_bytes = mem[self.buffer_range[0]:self.buffer_range[1]]
         szOSDEx2_bytes = mem[self.szOSDEx2_range[0]:self.szOSDEx2_range[1]]
