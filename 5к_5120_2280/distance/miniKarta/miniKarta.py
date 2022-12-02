@@ -6,6 +6,7 @@ from tkinter import *
 import distanceFinder
 import torch
 from pynput import keyboard
+from RTSSSharedMemory import RTSSSharedMemory
 
 try:
     print("Инициализация нейросетей")
@@ -51,20 +52,6 @@ try:
 
     # модели нейросетей готовы к работе
 
-    # root = Tk()
-    # root.geometry("175x80+15+15")
-    # label = Label(root, text=f'Дист:\nАзимут:', font=('Roboto','19'), fg='black', bg='yellow')
-    # label.master.overrideredirect(True)
-    # label.master.lift()
-    # label.master.wm_attributes("-topmost", True)
-    # label.master.wm_attributes("-disabled", True)
-    # label.master.wm_attributes("-transparentcolor", "white")
-    # label.pack()
-    # root.update()
-
-    # comand=["python", 'scale.py']
-    # Popen(comand)
-
     print("\nПрограмма ожидает сочетания клавиш")
 
     def on_distance():
@@ -72,7 +59,13 @@ try:
                              args=(modelTank, modelMarker))
         x.start()
 
-    with keyboard.GlobalHotKeys({"<ctrl>+n": on_distance, "<ctrl>+m": lambda: Popen(["python", "scale.py"]), "<ctrl>+q": lambda: quit()}) as h:
+    def on_quit():
+        rtss = RTSSSharedMemory("RTSSwtmmf")
+        rtss.releaseOSD()
+        rtss.close()
+        quit()
+
+    with keyboard.GlobalHotKeys({"`": on_distance, "<ctrl>+m": lambda: Popen(["python", "scale.py"]), "<ctrl>+q": on_quit}) as h:
         h.join()
 
 except Exception as e:
