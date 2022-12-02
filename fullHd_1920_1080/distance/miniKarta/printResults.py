@@ -1,136 +1,47 @@
-from tkinter import *
 import sys
 import time
+import traceback
+
 #import os
 #import signal
 #from threading import Timer
 #import asyncio
-import win32gui, win32api, win32con, pywintypes
-import traceback
+from RTSSSharedMemory import RTSSSharedMemory
+
+
+def printRTSS(rtss, text):
+    rtss.update_OSD(text.encode("ascii"))
+
 
 try:
     code = sys.argv[1]
+    rtss = RTSSSharedMemory("RTSSwtmmf")
 
     if code == "true":
 
         distance = sys.argv[2]
-        angel = sys.argv[3]
+        angle = sys.argv[3]
         scale = sys.argv[4]
 
-        ######################################################################
-        #Создание диалогового окна с результатами
+        printRTSS(
+            rtss, f"Distance: {distance}\nAngle: {angle}\nScale: {scale}")
 
-        root = Tk()
-        root.geometry("173x90+15+15") 
-        label = Label(root, text=f'Дист: {distance}\nАзимут: {angel}\nм. {scale}', font=('Roboto','19'), fg='black', bg='yellow')
-        label.master.overrideredirect(True)
-        label.master.lift()
-        label.master.wm_attributes("-topmost", True)
-        label.master.wm_attributes("-disabled", True)
-        #label.master.wm_attributes("-transparentcolor", "yellow")
-        
-        hWindow = pywintypes.HANDLE(int(label.master.frame(), 16)) 
-        exStyle = win32con.WS_EX_LAYERED | win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TRANSPARENT
-        win32api.SetWindowLong(hWindow, win32con.GWL_EXSTYLE, exStyle)
-        
-        label.pack()
-        root.update()
     elif code == "errorArrow":
         scale = sys.argv[2]
-        root = Tk()
-        root.geometry("173x90+15+15") 
-        label = Label(root, text=f'твой танк\nне найден\nм. {scale}', font=('Roboto','19'), fg='black', bg='yellow')
-        label.master.overrideredirect(True)
-        label.master.lift()
-        label.master.wm_attributes("-topmost", True)
-        label.master.wm_attributes("-disabled", True)
-        #label.master.wm_attributes("-transparentcolor", "yellow")
-        
-        hWindow = pywintypes.HANDLE(int(label.master.frame(), 16)) 
-        exStyle = win32con.WS_EX_LAYERED | win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TRANSPARENT
-        win32api.SetWindowLong(hWindow, win32con.GWL_EXSTYLE, exStyle)
-        
-        label.pack()
-        root.update()    
+        printRTSS(rtss, f"Player not found\nScale: {scale}")
+
     elif code == "errorMarker":
         scale = sys.argv[2]
-        root = Tk()
-        root.geometry("173x90+15+15") 
-        label = Label(root, text=f'метка\nне найдена\nм. {scale}', font=('Roboto','19'), fg='black', bg='yellow')
-        label.master.overrideredirect(True)
-        label.master.lift()
-        label.master.wm_attributes("-topmost", True)
-        label.master.wm_attributes("-disabled", True)
-        #label.master.wm_attributes("-transparentcolor", "yellow")
-        
-        hWindow = pywintypes.HANDLE(int(label.master.frame(), 16)) 
-        exStyle = win32con.WS_EX_LAYERED | win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TRANSPARENT
-        win32api.SetWindowLong(hWindow, win32con.GWL_EXSTYLE, exStyle)
-        
-        label.pack()
-        root.update()  
+        printRTSS(rtss, f"Marker not found\nScale: {scale}")
+
     elif code == "AError":
         scale = sys.argv[2]
-        root = Tk()
-        root.geometry("173x90+15+15") 
-        label = Label(root, text=f'буквы а е\nсовпадают\nм. {scale}', font=('Roboto','19'), fg='black', bg='yellow')
-        label.master.overrideredirect(True)
-        label.master.lift()
-        label.master.wm_attributes("-topmost", True)
-        label.master.wm_attributes("-disabled", True)
-        #label.master.wm_attributes("-transparentcolor", "yellow")
-        
-        hWindow = pywintypes.HANDLE(int(label.master.frame(), 16)) 
-        exStyle = win32con.WS_EX_LAYERED | win32con.WS_EX_NOACTIVATE | win32con.WS_EX_TRANSPARENT
-        win32api.SetWindowLong(hWindow, win32con.GWL_EXSTYLE, exStyle)
-        
-        label.pack()
-        root.update() 
-        
-    toplist = []
-    winlist = []
-    def enum_callback(hwnd, results):
-        winlist.append((hwnd, win32gui.GetWindowText(hwnd)))
-
-    win32gui.EnumWindows(enum_callback, toplist)
-    wt = [(hwnd, title) for hwnd, title in winlist if 'war thunder' in title.lower()]
-    # just grab the first window that matches
-    if wt !=[]:
-        wt = wt[0]
-        # use the window handle to set focus
-        win32gui.SetForegroundWindow(wt[0])    
-    #pid = os.getpid()
-    #os.kill(pid, signal.SIGTERM)
-
-
-    #arguments: 
-    #how long to wait (in seconds), 
-    #what function to call, 
-    #what gets passed in
-    #r = Timer(3.0, quitProcess, NONE)
-    #s = Timer(2.0, nArgs, ("OWLS","OWLS","OWLS"))
-
-    #r.start()
-    #s.start()
-    #async def quitProcess():
-    #    await asyncio.sleep(3)
-    #    quit()
-
-    #asyncio.run(quitProcess())
-
-
-    #timeout = 5
-    #t = Timer(timeout, os._exit, [1])
-    #t.start()
-    #try:
-    #    prompt = "У вас есть %d секунд чтобы ввести ответ...\n" % timeout
-    #    answer = input(prompt)
-    #finally:
-    #    t.cancel()
+        printRTSS(rtss, f"A E collide\nScale: {scale}")
 
     time.sleep(7)
+    rtss.close()
     quit()
-    ######################################################################
+
 except Exception as e:
     file = open('error.log', 'a')
     file.write('\n\n')
