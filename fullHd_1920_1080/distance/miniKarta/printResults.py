@@ -2,14 +2,10 @@ import sys
 import time
 import traceback
 
-#import os
-#import signal
-#from threading import Timer
-#import asyncio
 from RTSSSharedMemory import RTSSSharedMemory
 
 
-def printRTSS(rtss, text):
+def print_RTSS(rtss, text):
     rtss.update_OSD(text.encode("ascii"))
 
 
@@ -23,20 +19,20 @@ try:
         angle = sys.argv[3]
         scale = sys.argv[4]
 
-        printRTSS(
+        print_RTSS(
             rtss, f"Distance: {distance}\nAngle: {angle}\nScale: {scale}")
 
     elif code == "errorArrow":
         scale = sys.argv[2]
-        printRTSS(rtss, f"Player not found\nScale: {scale}")
+        print_RTSS(rtss, f"Player not found\nScale: {scale}")
 
     elif code == "errorMarker":
         scale = sys.argv[2]
-        printRTSS(rtss, f"Marker not found\nScale: {scale}")
+        print_RTSS(rtss, f"Marker not found\nScale: {scale}")
 
     elif code == "AError":
         scale = sys.argv[2]
-        printRTSS(rtss, f"A E collide\nScale: {scale}")
+        print_RTSS(rtss, f"A E collide\nScale: {scale}")
 
     time.sleep(7)
     rtss.close()
