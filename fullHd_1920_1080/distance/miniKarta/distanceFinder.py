@@ -1,9 +1,13 @@
 import math
-from subprocess import Popen
+import traceback
 
 import cv2
 import numpy as np
 import pyautogui
+import win32gui
+from imagehash import average_hash
+from PIL.Image import Image
+from printResults import show
 
 MAP_FILE = "map.png"
 SCALE_FILE = "scale.txt"
@@ -14,11 +18,36 @@ E_LETTER_FILE = "e_letter.png"
 def checkDistance(modelTank, modelMarker, scale=250):
 
     ######################################################################
-    screen = pyautogui.screenshot(MAP_FILE, region=(1462, 622, 456, 456))
+    screen: Image = pyautogui.screenshot(
+        MAP_FILE, region=(1462, 622, 456, 456))
     size = 456
-    map = cv2.imread(MAP_FILE)
     ######################################################################
 
+    try:
+        topList = []
+        winList = []
+
+        def enum_callback(hwnd, results):
+            winList.append((hwnd, win32gui.GetWindowText(hwnd)))
+
+        win32gui.EnumWindows(enum_callback, topList)
+        wt = [(hwnd, title)
+              for hwnd, title in winList if 'war thunder' in title.lower()]
+        # just grab the first window that matches
+        if wt != []:
+            wt = wt[0]
+            # use the window handle to set focus
+            win32gui.SetForegroundWindow(wt[0])
+
+    except Exception as e:
+        file = open('error.log', 'a')
+        file.write('\n\n')
+        traceback.print_exc(file=file, chain=True)
+        traceback.print_exc()
+        file.write(str(e))
+        file.close()
+
+    map = cv2.imread(MAP_FILE)
     ######################################################################
     # Определяем позицию танка
 
@@ -26,7 +55,8 @@ def checkDistance(modelTank, modelMarker, scale=250):
     arrowsConfidences = arrowResults.xyxy[0][:, -2].numpy().tolist()
 
     if arrowsConfidences == []:
-        showErrorArrow(scale, screen)
+        screen.save(f"shit_detection/A{average_hash(screen)}.png")
+        show("Player not found")
         return
 
     arrowsCoords = arrowResults.xyxy[0][:, :-2].numpy()
@@ -42,7 +72,7 @@ def checkDistance(modelTank, modelMarker, scale=250):
     tankPosition = ((tankArrow[2]+tankArrow[0])/2,
                     (tankArrow[3]+tankArrow[1])/2)
 
-    print("Позиция танка", tankPosition)
+    print("Tank pos", tankPosition)
     ######################################################################
 
     ######################################################################
@@ -51,7 +81,8 @@ def checkDistance(modelTank, modelMarker, scale=250):
 
     markerConfidences = markerResults.xyxy[0][:, -2].numpy().tolist()
     if markerConfidences == []:
-        showErrorMarker(scale, screen)
+        screen.save(f"shit_detection/M{average_hash(screen)}.png")
+        show("Marker not found")
         return
     markerCoords = markerResults.xyxy[0][:, :-2].numpy()
     markerIndex = 0
@@ -69,7 +100,7 @@ def checkDistance(modelTank, modelMarker, scale=250):
         (yellowMarker[2]+yellowMarker[0])/2, (yellowMarker[3]+yellowMarker[1])/2)
     ###
 
-    print("Центр желтого маркера", markerPosition)
+    print("Marker center", markerPosition)
     ######################################################################
 
     # катеты по двум точкам
@@ -120,63 +151,24 @@ def checkDistance(modelTank, modelMarker, scale=250):
     aLetter = cv2.imread(A_LETTER_FILE)
     resALetter = cv2.matchTemplate(map, aLetter, cv2.TM_CCOEFF_NORMED)
     a, b, d, top_left_a = cv2.minMaxLoc(resALetter)
-    print("лев_верх_угол_буква_a", top_left_a)
+    print("top_left_a", top_left_a)
 
     eLetter = cv2.imread(E_LETTER_FILE)
     resELetter = cv2.matchTemplate(map, eLetter, cv2.TM_CCOEFF_NORMED)
     a, b, d, top_left_e = cv2.minMaxLoc(resELetter)
-    print("лев_верх_угол_буква_e", top_left_e)
+    print("top_left_e", top_left_e)
     ###
 
     line = (top_left_e[1] - top_left_a[1])/4
     if line == 0:
-        showAError(scale)
+        show("A E collide")
         return
     ######################################################################
 
     # получаем дистанцию в метрах
     distance = hypotenuse/line*scale
-    print("Азимут", angle)
-    print("Дистанция", distance)
+    print("Azimuth", angle)
+    print("Distance", distance)
 
-    command = ["python", 'printResults.py', "true",
-               f'{round(distance)}', f'{round(angle,1)}', f'{scale}']
-    Popen(command)
+    show(f"{round(distance)}\n{round(angle, 1)}")
     ######################################################################
-
-
-def showErrorArrow(scale, screen):
-    file = open('shit_detection/tank/number.txt', 'r')
-    number = file.read()
-    if number == "":
-        number = "0"
-    number = int(number)
-    file.close()
-    file = open('shit_detection/tank/number.txt', 'w')
-    screen.save(f'shit_detection/tank/screen{number}.png')
-    number += 1
-    file.write(str(number))
-    file.close()
-    command = ["python", 'printResults.py', "errorArrow", f'{scale}']
-    Popen(command)
-
-
-def showErrorMarker(scale, screen):
-    file = open('shit_detection/marker/number.txt', 'r')
-    number = file.read()
-    if number == "":
-        number = "0"
-    number = int(number)
-    file.close()
-    file = open('shit_detection/marker/number.txt', 'w')
-    screen.save(f'shit_detection/marker/screen{number}.png')
-    number += 1
-    file.write(str(number))
-    file.close()
-    command = ["python", 'printResults.py', "errorMarker", f'{scale}']
-    Popen(command)
-
-
-def showAError(scale):
-    command = ["python", 'printResults.py', "AError", f'{scale}']
-    Popen(command)

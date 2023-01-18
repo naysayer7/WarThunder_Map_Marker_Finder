@@ -20,6 +20,7 @@ pynput>=1.7.6
 tk
 pywin32
 pyautogui
+imagehash
 
 # Logging ---------------------------------------------------------------------
 tensorboard>=2.4.1

@@ -66,7 +66,7 @@ class RTSSSharedMemory:
             if bResult:
                 break
 
-    def releaseOSD(self):
+    def release_OSD(self):
         for dwEntry in range(1, self.dwOSDArrSize):
             ptr = self.dwOSDArrOffset + dwEntry * self.dwOSDEntrySize
             entry = RTSSSharedMemoryOsd(
