@@ -1,10 +1,9 @@
 import math
-import traceback
 
 import cv2
+import mss
 import numpy as np
-import pyautogui
-import win32gui
+import PIL.Image
 from imagehash import average_hash
 from PIL.Image import Image
 from printResults import show
@@ -15,38 +14,24 @@ A_LETTER_FILE = "a_letter.png"
 E_LETTER_FILE = "e_letter.png"
 
 
-def checkDistance(modelTank, modelMarker, scale=250):
+def take_screenshot(region) -> Image:
+    region = [region[0], region[1], region[0] +
+              region[2], region[1] + region[3]]
+
+    with mss.mss() as sct:
+        sct_image = sct.grab(sct.monitors[1])
+        img = PIL.Image.frombytes(
+            "RGB", sct_image.size, sct_image.bgra, "raw", "BGRX")
+
+        return img.crop(region)
+
+
+def get_distance(modelTank, modelMarker, scale=250):
 
     ######################################################################
-    screen: Image = pyautogui.screenshot(
-        MAP_FILE, region=(1462, 622, 456, 456))
+    screen = take_screenshot((1462, 622, 456, 456))
     size = 456
     ######################################################################
-
-    try:
-        topList = []
-        winList = []
-
-        def enum_callback(hwnd, results):
-            winList.append((hwnd, win32gui.GetWindowText(hwnd)))
-
-        win32gui.EnumWindows(enum_callback, topList)
-        wt = [(hwnd, title)
-              for hwnd, title in winList if 'war thunder' in title.lower()]
-        # just grab the first window that matches
-        if wt != []:
-            wt = wt[0]
-            # use the window handle to set focus
-            win32gui.SetForegroundWindow(wt[0])
-
-    except Exception as e:
-        file = open('error.log', 'a')
-        file.write('\n\n')
-        traceback.print_exc(file=file, chain=True)
-        traceback.print_exc()
-        file.write(str(e))
-        file.close()
-
     map = cv2.imread(MAP_FILE)
     ######################################################################
     # Определяем позицию танка

@@ -63,7 +63,7 @@ def main():
                 return int(f.readline())
 
         def on_distance():
-            x = threading.Thread(target=distanceFinder.checkDistance,
+            x = threading.Thread(target=distanceFinder.get_distance,
                                  args=(modelTank, modelMarker, get_scale()))
             x.start()
 
