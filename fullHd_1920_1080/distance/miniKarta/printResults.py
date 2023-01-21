@@ -1,26 +1,21 @@
-import time
-import traceback
+from time import sleep
 
-from RTSSSharedMemory import RTSSSharedMemory
+from config import get_conf
+from RTSSSharedMemory import ConnectionFailed, RTSSSharedMemory
 
-
-def print_RTSS(rtss: RTSSSharedMemory, text: str):
-    rtss.update_OSD(text.encode("ascii"))
+CONFIG_FILE = "prefs.cfg"
 
 
 def show(message: str):
+    conf = get_conf()
+
     try:
         rtss = RTSSSharedMemory("RTSSwtmmf")
-
-        print_RTSS(rtss, message)
-
-        time.sleep(7)
+        rtss.update_OSD(message.encode("ascii"))
+        if float(conf["Showtime"]):
+            sleep(float(conf["Showtime"]))
+            rtss.update_OSD(b"")
         rtss.close()
 
-    except Exception as e:
-        file = open('error.log', 'a')
-        file.write('\n\n')
-        traceback.print_exc(file=file, chain=True)
-        traceback.print_exc()
-        file.write(str(e))
-        file.close()
+    except ConnectionFailed:
+        print("Unable to connect to the RTSS")

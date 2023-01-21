@@ -17,10 +17,9 @@ torchvision>=0.8.1
 tqdm>=4.64.0
 pynput>=1.7.6
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
-tk
-pywin32
 mss
 imagehash
+dearpygui
 
 # Logging ---------------------------------------------------------------------
 tensorboard>=2.4.1

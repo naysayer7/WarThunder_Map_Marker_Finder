@@ -1,9 +1,7 @@
 import math
 
 import cv2
-import mss
 import numpy as np
-import PIL.Image
 from imagehash import average_hash
 from PIL.Image import Image
 from printResults import show
@@ -14,22 +12,9 @@ A_LETTER_FILE = "a_letter.png"
 E_LETTER_FILE = "e_letter.png"
 
 
-def take_screenshot(region) -> Image:
-    region = [region[0], region[1], region[0] +
-              region[2], region[1] + region[3]]
-
-    with mss.mss() as sct:
-        sct_image = sct.grab(sct.monitors[1])
-        img = PIL.Image.frombytes(
-            "RGB", sct_image.size, sct_image.bgra, "raw", "BGRX")
-
-        return img.crop(region)
-
-
-def get_distance(modelTank, modelMarker, scale=250):
-
+def get_distance(modelTank, modelMarker, screen: Image, scale=250):
     ######################################################################
-    screen = take_screenshot((1462, 622, 456, 456))
+    screen.save("map.png")
     size = 456
     ######################################################################
     map = cv2.imread(MAP_FILE)
