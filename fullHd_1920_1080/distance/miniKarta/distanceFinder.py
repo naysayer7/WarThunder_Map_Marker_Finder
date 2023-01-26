@@ -14,7 +14,7 @@ E_LETTER_FILE = "e_letter.png"
 
 def get_distance(modelTank, modelMarker, screen: Image, scale=250):
     ######################################################################
-    screen.save("map.png")
+    screen.save(MAP_FILE)
     size = 456
     ######################################################################
     map = cv2.imread(MAP_FILE)

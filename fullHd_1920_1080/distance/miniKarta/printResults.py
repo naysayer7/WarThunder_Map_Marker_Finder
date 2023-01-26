@@ -1,19 +1,17 @@
 from time import sleep
 
-from config import get_conf
+from config import Config
 from RTSSSharedMemory import ConnectionFailed, RTSSSharedMemory
-
-CONFIG_FILE = "prefs.cfg"
 
 
 def show(message: str):
-    conf = get_conf()
+    conf = Config()
 
     try:
         rtss = RTSSSharedMemory("RTSSwtmmf")
         rtss.update_OSD(message.encode("ascii"))
-        if float(conf["Showtime"]):
-            sleep(float(conf["Showtime"]))
+        if float(conf.get("Showtime")):
+            sleep(float(conf.get("Showtime")))
             rtss.update_OSD(b"")
         rtss.close()
 

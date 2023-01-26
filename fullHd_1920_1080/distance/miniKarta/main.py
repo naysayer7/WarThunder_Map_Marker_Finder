@@ -6,56 +6,54 @@ import distanceFinder
 import mss
 import PIL.Image
 import torch
-from config import get_conf, write_conf
+from config import Config
 from dearpygui.dearpygui import *
 from PIL.Image import Image
 from pynput import keyboard
-from RTSSSharedMemory import RTSSSharedMemory
+from RTSSSharedMemory import RTSSSharedMemory, ConnectionFailed
 
 
-def init_nn():
-    print("Neural networks init")
-
+def init_models():
     # инициализация модели нейросети для поиска танка
-    modelTank = torch.hub.load(
+    model_tank = torch.hub.load(
         '../yolo5', 'custom', '../yolo5/bestTank.pt', source='local')  # classes="1"
 
     # инициализация модели нейросети для поиска метки
-    modelMarker = torch.hub.load(
+    model_marker = torch.hub.load(
         '../yolo5', 'custom', '../yolo5/bestMarker.pt', source='local')  # classes="1"
 
     # перевод моделей в режим процессора
     # только если нет норм видеокарты
-    modelTank.cpu()
-    modelMarker.cpu()
+    model_tank.cpu()
+    model_marker.cpu()
 
     # настройка модели танка
-    modelTank.conf = 0.15  # NMS confidence threshold отсев по точности первый
+    model_tank.conf = 0.15  # NMS confidence threshold отсев по точности первый
     # NMS IoU threshold второй, то есть то что больше 45% в теории пройдет
-    modelTank.iou = 0.45
-    modelTank.agnostic = False  # NMS class-agnostic
+    model_tank.iou = 0.45
+    model_tank.agnostic = False  # NMS class-agnostic
     # NMS multiple labels per box несколько лейблов одному объекту
-    modelTank.multi_label = False
+    model_tank.multi_label = False
     # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
-    modelTank.classes = [0, 1]
+    model_tank.classes = [0, 1]
     # номера каких классов оставить
-    modelTank.max_det = 1000  # maximum number of detections per image
-    modelTank.amp = False  # Automatic Mixed Precision (AMP) inference
+    model_tank.max_det = 1000  # maximum number of detections per image
+    model_tank.amp = False  # Automatic Mixed Precision (AMP) inference
 
     # настройка модели маркера
-    modelMarker.conf = 0.15  # NMS confidence threshold отсев по точности первый
+    model_marker.conf = 0.15  # NMS confidence threshold отсев по точности первый
     # NMS IoU threshold второй, то есть то что больше 45% в теории пройдет
-    modelMarker.iou = 0.45
-    modelMarker.agnostic = False  # NMS class-agnostic
+    model_marker.iou = 0.45
+    model_marker.agnostic = False  # NMS class-agnostic
     # NMS multiple labels per box несколько лейблов одному объекту
-    modelMarker.multi_label = False
+    model_marker.multi_label = False
     # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
-    modelMarker.classes = [0]
+    model_marker.classes = [0]
     # номера каких классов оставить
-    modelMarker.max_det = 1000  # maximum number of detections per image
-    modelMarker.amp = False  # Automatic Mixed Precision (AMP) inference
+    model_marker.max_det = 1000  # maximum number of detections per image
+    model_marker.amp = False  # Automatic Mixed Precision (AMP) inference
 
-    return modelMarker, modelTank
+    return model_marker, model_tank
 
 
 def take_screenshot(region) -> Image:
@@ -92,10 +90,11 @@ def update_texture(img: Image):
 
 def main():
     try:
-        modelMarker, modelTank = init_nn()
-        # модели нейросетей готовы к работе
+        print("Initializing models")
+        model_marker, model_tank = init_models()
+        print("Models initialized")
 
-        conf = get_conf()
+        conf = Config()
 
         scale = 250
 
@@ -104,20 +103,20 @@ def main():
             scale = app_data
 
         def on_distance():
-            sleep(float(conf["Delay"]))
+            sleep(float(conf.get("Delay")))
             screen = take_screenshot((1462, 622, 456, 456))
             update_texture(screen)
             threading.Thread(target=distanceFinder.get_distance,
-                             args=(modelTank, modelMarker, screen, scale)).start()
+                             args=(model_tank, model_marker, screen, scale)).start()
 
         def save_conf(sender, app_data):
-            new_conf = {}
-            new_conf["Delay"] = round(get_value("delay_input"), 3)
-            new_conf["Showtime"] = round(get_value("showtime_input"), 3)
-            new_conf["Hotkey"] = get_value("hotkey_input")
-            write_conf(new_conf)
+            conf = Config()
+            conf.set("Delay", round(get_value("delay_input"), 3))
+            conf.set("Showtime", round(get_value("showtime_input"), 3))
+            conf.set("Hotkey", get_value("hotkey_input"))
+            Config().save()
 
-        keyboard.GlobalHotKeys({"`": on_distance}).start()
+        keyboard.GlobalHotKeys({conf.get("Hotkey"): on_distance}).start()
 
         create_context()
         with texture_registry(show=False):
@@ -133,15 +132,15 @@ def main():
 
                 with tab(label="preferences"):
                     add_input_float(label="delay, s",
-                                    default_value=float(conf["Delay"]),
+                                    default_value=float(conf.get("Delay")),
                                     tag="delay_input")
 
                     add_input_float(label="showtime, s",
-                                    default_value=float(conf["Showtime"]),
+                                    default_value=float(conf.get("Showtime")),
                                     tag="showtime_input")
 
                     add_input_text(label="hotkey",
-                                   default_value=conf["Hotkey"],
+                                   default_value=conf.get("Hotkey"),
                                    tag="hotkey_input")
 
                     add_button(label="save", width=456, callback=save_conf)
@@ -153,10 +152,12 @@ def main():
         start_dearpygui()
         destroy_context()
 
-        rtss = RTSSSharedMemory("RTSSwtmmf")
-        rtss.release_OSD()
-        rtss.close()
-
+        try:
+            rtss = RTSSSharedMemory("RTSSwtmmf")
+            rtss.release_OSD()
+            rtss.close()
+        except ConnectionFailed:
+            pass
     except Exception as e:
         file = open('error.log', 'a')
         file.write('\n\n')
