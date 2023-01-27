@@ -2,13 +2,12 @@ from mmap import mmap
 from struct import unpack
 
 MIN_VERSION = 0x0002000e  # Shared Memory ≥ v2.14 REQUIRED
-LENGTH = 5546080
 
 
 class RTSSSharedMemory:
     def __init__(self, name):
         self.name = name
-        self.shm = mmap(0, LENGTH, "RTSSSharedMemoryV2")
+        self.shm = mmap(0, 256, "RTSSSharedMemoryV2")
 
         self.shared_memory_version()
 
@@ -20,9 +19,8 @@ class RTSSSharedMemory:
 
         # mmap size adjustment
         calc_mmap_size = self.dwAppArrOffset + self.dwAppArrSize * self.dwAppEntrySize
-        if LENGTH < calc_mmap_size:
-            self.shm.close()
-            self.shm = mmap(0, LENGTH, "RTSSSharedMemoryV2")
+        self.shm.close()
+        self.shm = mmap(0, calc_mmap_size, "RTSSSharedMemoryV2")
 
     def shared_memory_version(self):
         self.dwVersion = 0
@@ -45,7 +43,7 @@ class RTSSSharedMemory:
                     self.shm[ptr:ptr + self.dwOSDEntrySize])
 
                 if dwPass:
-                    if entry.szOSDOwner == "":
+                    if not entry.szOSDOwner:
                         OSDowner = self.name.encode("ascii")
                         self.shm[ptr + entry.szOSDOwner_range[0]:ptr +
                                  entry.szOSDOwner_range[0] + len(OSDowner)] = OSDowner  # Write new OSDOwner
