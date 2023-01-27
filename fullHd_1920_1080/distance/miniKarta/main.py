@@ -10,7 +10,7 @@ from config import Config
 from dearpygui.dearpygui import *
 from PIL.Image import Image
 from pynput import keyboard
-from RTSSSharedMemory import RTSSSharedMemory, ConnectionFailed
+from RTSS.sharedmemory import ConnectionFailed, SharedMemoryRTSS
 
 
 def init_models():
@@ -153,7 +153,7 @@ def main():
         destroy_context()
 
         try:
-            rtss = RTSSSharedMemory("RTSSwtmmf")
+            rtss = SharedMemoryRTSS("RTSSwtmmf")
             rtss.release_OSD()
             rtss.close()
         except ConnectionFailed:
