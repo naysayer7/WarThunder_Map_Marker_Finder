@@ -5,7 +5,7 @@ import numpy as np
 from imagehash import average_hash
 from PIL.Image import Image
 
-from printResults import show
+from printResults import show_error, show_result
 
 MAP_FILE = "map.png"
 SCALE_FILE = "scale.txt"
@@ -39,12 +39,12 @@ def get_distance(model, screen: Image, scale: int, to_size: int = 480, resolutio
 
     if type(tankArrow) is int:
         screen.save(f"shit_detection/A{average_hash(screen)}.png")
-        show("Player not found")
+        show_error("Player not found")
         return
 
     if type(yellowMarker) is int:
         screen.save(f"shit_detection/M{average_hash(screen)}.png")
-        show("Marker not found")
+        show_error("Marker not found")
         return
 
     tankPosition = ((tankArrow[2]+tankArrow[0])/2,
@@ -161,7 +161,7 @@ def get_distance(model, screen: Image, scale: int, to_size: int = 480, resolutio
     print(
         f'Used {newArrOfLetters[0][1][1]} and {newArrOfLetters[1][1][1]}')
     if line == 0:
-        show("Letters collide")
+        show_error("Letters collide")
         return
     ######################################################################
 
@@ -170,4 +170,4 @@ def get_distance(model, screen: Image, scale: int, to_size: int = 480, resolutio
     print("Azimuth", angle)
     print("Distance", distance)
 
-    show(f"{round(distance)}\n{round(angle, 1)}")
+    show_result(distance, angle)

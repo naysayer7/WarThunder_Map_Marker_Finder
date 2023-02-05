@@ -1,15 +1,17 @@
 import threading
 import traceback
+from ast import literal_eval
 from time import sleep
 
-import distanceFinder
 import mss
 import PIL.Image
 import torch
-from config import Config
 from dearpygui.dearpygui import *
 from PIL.Image import Image
 from pynput import keyboard
+
+from config import Config
+from distanceFinder import get_distance
 from RTSS.sharedmemory import ConnectionFailed, SharedMemoryRTSS
 
 # [x, y, sizeReal, size]
@@ -27,7 +29,7 @@ def init_models():
     return model
 
 
-def take_screenshot(region) -> Image:
+def take_screenshot(region: Union[list[int], tuple[int]]) -> Image:
     region = [region[0], region[1], region[0] +
               region[2], region[1] + region[3]]
 
@@ -84,15 +86,17 @@ def main():
             screen = take_screenshot(screen_region)
             update_texture(screen)
 
-            threading.Thread(target=distanceFinder.get_distance,
+            threading.Thread(target=get_distance,
                              args=(model, screen, scale, to_size, conf.get("resolution"))).start()
 
         def save_conf(sender, app_data):
             conf = Config()
-            conf.set("Delay", round(get_value("delay_input"), 3))
-            conf.set("Showtime", round(get_value("showtime_input"), 3))
-            conf.set("Hotkey", get_value("hotkey_input"))
-            conf.set("Resolution", get_value("resolution_list"))
+            conf.set("delay", round(get_value("delay_input"), 3))
+            conf.set("showtime", round(get_value("showtime_input"), 3))
+            conf.set("hotkey", get_value("hotkey_input"))
+            conf.set("resolution", get_value("resolution_list"))
+            conf.set("distance_color", get_value("distance_color"))
+            conf.set("azimuth_color", get_value("azimuth_color"))
             conf.save()
 
         keyboard.GlobalHotKeys({conf.get("hotkey"): on_distance}).start()
@@ -127,9 +131,21 @@ def main():
                               default_value=conf.get("resolution"),
                               tag="resolution_list")
 
-                    add_button(label="save", width=456, callback=save_conf)
+                    add_color_edit(label="distance color",
+                                   default_value=literal_eval(
+                                       conf.get("distance_color")),
+                                   no_alpha=True,
+                                   tag="distance_color")
+                    add_color_edit(label="azimuth color",
+                                   default_value=literal_eval(
+                                       conf.get("azimuth_color")),
+                                   no_alpha=True,
+                                   display_mode=mvColorEdit_uint8,
+                                   tag="azimuth_color")
 
-        create_viewport(title="WT Marker Rangefinder", width=486, height=600)
+                    add_button(label="save", width=480, callback=save_conf)
+
+        create_viewport(title="WT Marker Rangefinder", width=488, height=600)
         setup_dearpygui()
         show_viewport()
         set_primary_window("primary_window", True)
